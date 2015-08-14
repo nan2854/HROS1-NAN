@@ -92,7 +92,7 @@ void GetCurrentPose( CM730 *cm730, char* response )
 	}
 }
 
-void TorqueAllMotors(CM730 *cm730, char * input)
+void TorqueAllServos(CM730 *cm730, char * input)
 {
 	int on;
 	if(input[0]=='1')
@@ -105,12 +105,12 @@ void TorqueAllMotors(CM730 *cm730, char * input)
 	}
 	else 
 	{
-		printf( "TorqueAllMotors could not process the value: %s\r\n", input );
+		printf( "TorqueAllServos could not process the value: %s\r\n", input );
 		return;
 	}
 	
 #ifdef DEBUG
-	printf( "netrme: Setting TorqueAllMotors to  %d\r\n", on );
+	printf( "netrme: Setting TorqueAllServos to  %d\r\n", on );
 #endif
 
 	for( int i = JointData::ID_MIN; i <= JointData::ID_MAX; ++i )
@@ -202,21 +202,17 @@ void SetServoSpeeds( CM730 *cm730, char* input )
 	char * pch;
 	pch = strtok( input, ",:" );
 	
-	while( pch != 0 )
+	if ( pch != 0 )
 	{		
 		int speed = atoi( pch );
+		if ( speed < 0 ) speed = 0;
+		if ( speed > 1023 ) speed = 1023;
 		
 		int error;
-		if ( cm730->WriteWord(255, MX28::P_MOVING_SPEED_L, speed, &error) != CM730::SUCCESS )
+		if ( cm730->WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, speed, &error) != CM730::SUCCESS )
 		{
 			printf( "Warning: SetServoSpeeds did not return success with value %d error was %d\r\n", speed, error );
 		}
-#ifdef DEBUG
-		else
-		{
-			printf( "netrme: SetServoSpeeds broadcasted a new speed of %d\r\n", speed );
-		}
-#endif
 	}
 }
 
@@ -398,7 +394,7 @@ void UDP_Command_Handler( char * p_udpin )
 	}
 	else if( memcmp( p_udpin, "TORQUEALL:", 10 ) == 0 )
 	{
-		TorqueAllMotors( &cm730, p_udpin+10 );
+		TorqueAllServos( &cm730, p_udpin+10 );
 		return;
 	}
 	else if( memcmp( p_udpin, "TORQUE", 6 ) == 0 )
@@ -421,7 +417,7 @@ void UDP_Command_Handler( char * p_udpin )
 	else if( memcmp( p_udpin, "PLAYPAGE:", 9 ) == 0 )
 	{
 		//NOTE: For safety, especially during debugging, make sure motor torque is on before playing!
-		TorqueAllMotors( &cm730, (char*)"1" );		
+		TorqueAllServos( &cm730, (char*)"1" );		
 		PlayPage( &cm730, p_udpin );
 		return;
 	}
@@ -462,48 +458,19 @@ void UDP_Control_Handler( char * p_udpin )
 	printf( "netrme: UDP Control Packet Received: %s\r\n", p_udpin );
 #endif
 
-	//On bind turn the torque on and get the current pose processed through action manager
+	//On bind torque the servos and set default torque limit and speeds for basic control
 	if ( memcmp( p_udpin, "BIND", 4 ) == 0 ) 
 	{
-		TorqueAllMotors( &cm730, (char*)"1" );
+		TorqueAllServos( &cm730, (char*)"1" );
 		
-		usleep( 200000 );
-		
-		Action::PAGE tPage;
-		Action::GetInstance()->ResetPage(&tPage);
-		Action::STEP CurrentStep;
-		PopulateStepCurrent(&cm730,&CurrentStep);
-	
-		for( int id = JointData::ID_MIN; id <= JointData::ID_MAX; id++ )
+		if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_TORQUE_LIMIT_L, 684, 0) != CM730::SUCCESS  )
 		{
-			MotionStatus::m_CurrentJoints.SetValue(id, CurrentStep.position[id]);
-			tPage.step[0].position[id] = CurrentStep.position[id];		
+			printf( "Warning: TODO\r\n");
 		}
-	
-		tPage.step[0].pause=0;
-		tPage.step[0].time = 63;
-		tPage.header.stepnum = 1;
-		tPage.header.repeat = 1;
-		tPage.header.schedule = Action::TIME_BASE_SCHEDULE;
-		tPage.header.speed = 28;
-		tPage.header.accel = 255;
-		Action::GetInstance()->m_Joint.SetEnableBody(true, true);
-		MotionManager::GetInstance()->SetEnable(true);
-		linuxMotionTimer.Start();
-	
-		if(Action::GetInstance()->Start(0, &tPage) == false)
+		if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 512, 0) != CM730::SUCCESS )
 		{
-			MotionManager::GetInstance()->SetEnable(false);
-			return;
+			printf( "Warning: TODO\r\n");
 		}
-	
-		while(Action::GetInstance()->IsRunning())
-		{			
-			usleep(10000);	
-		}
-	
-		MotionManager::GetInstance()->SetEnable(false);
-		linuxMotionTimer.Stop();
 	}
 }
 
