@@ -28,8 +28,8 @@ void AngleEstimator::update(double x, double y, double z)
 	m_acc_y = (1.0 - m_acc_smooth_decay) * m_acc_y + m_acc_smooth_decay * y;
 	m_acc_z = (1.0 - m_acc_smooth_decay) * m_acc_z + m_acc_smooth_decay * z;
 
-	double acc_roll = atan2(m_acc_x, m_acc_z);
-	double acc_pitch = atan2(-m_acc_y, sqrt(m_acc_x*m_acc_x+m_acc_z*m_acc_z));
+	double acc_roll = atan2(m_acc_y, m_acc_z);
+	double acc_pitch = atan2(-m_acc_x, sqrt(m_acc_y*m_acc_y+m_acc_z*m_acc_z));
 
 	m_pitch = (1.0 - m_acc_gain) * m_pitch + m_acc_gain * acc_pitch;
 	m_roll = (1.0 - m_acc_gain) * m_roll   + m_acc_gain * acc_roll;

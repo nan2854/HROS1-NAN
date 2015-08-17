@@ -47,7 +47,7 @@ int change_current_dir()
 
 int main(int argc, char *argv[])
 {
-		int trackerSel;    
+		//int trackerSel;    
 		change_current_dir();
 
     minIni* ini = new minIni(INI_FILE_PATH); 
@@ -201,8 +201,16 @@ MotionManager::GetInstance()->LoadINISettings(ini);
 			Action::GetInstance()->Start(15);
 			while(Action::GetInstance()->IsRunning()) usleep(8*1000);
 			}
+			
+if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM730::SUCCESS )
+{
+	printf( "Warning: TODO\r\n");
+}
+		
+		
     while(1)
 			{
+			usleep( 10000 );
       StatusCheck::Check(cm730);
 
 		if(StatusCheck::m_is_started == 0)

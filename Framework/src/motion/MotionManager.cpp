@@ -273,23 +273,23 @@ void MotionManager::Process()
         static int fb_array[ACCEL_WINDOW_SIZE] = {512,};
         static int buf_idx = 0;
         if(m_CM730->m_BulkReadData[CM730::ID_CM].error == 0)
-					{
+		{
           const double GYRO_ALPHA = 0.1;
           int gyroValFB = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_GYRO_Y_L) - m_FBGyroCenter;
-          int gyroValRL = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_GYRO_X_L) - m_RLGyroCenter;
+          int gyroValRL = -/*isInverted*/(m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_GYRO_X_L) - m_RLGyroCenter);
 
           MotionStatus::FB_GYRO = (1.0 - GYRO_ALPHA) * MotionStatus::FB_GYRO + GYRO_ALPHA * gyroValFB;
           MotionStatus::RL_GYRO = (1.0 - GYRO_ALPHA) * MotionStatus::RL_GYRO + GYRO_ALPHA * gyroValRL;;
-          MotionStatus::RL_ACCEL = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_X_L);
-          MotionStatus::FB_ACCEL = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_Y_L);
+          MotionStatus::RL_ACCEL = 1024 - m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_Y_L);
+          MotionStatus::FB_ACCEL = 1024 - m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_X_L);
 
 					fb_array[buf_idx] = MotionStatus::FB_ACCEL;
           if(++buf_idx >= ACCEL_WINDOW_SIZE) buf_idx = 0;
 
            const double TICKS_TO_RADIANS_PER_STEP = (M_PI/180.0) * 250.0/512.0 * (0.001 * MotionModule::TIME_UNIT);
            m_angleEstimator.predict(
-              -TICKS_TO_RADIANS_PER_STEP * gyroValFB,
-              TICKS_TO_RADIANS_PER_STEP * gyroValRL,
+              TICKS_TO_RADIANS_PER_STEP * gyroValFB,
+              -TICKS_TO_RADIANS_PER_STEP * gyroValRL,
               0
            );
 
@@ -300,8 +300,14 @@ void MotionManager::Process()
            );
 
            MotionStatus::ANGLE_PITCH = m_angleEstimator.pitch();
-           MotionStatus::ANGLE_ROLL  = m_angleEstimator.roll();
-					}
+           MotionStatus::ANGLE_ROLL  = -m_angleEstimator.roll();
+
+
+//DEBUG:
+int accelz = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_Z_L);
+printf( "Pitch: %0.2f Roll: %0.2f ax: %d ay: %d az: %d gyroRoll: %d gyroPitch %d\r\n", MotionStatus::ANGLE_PITCH * 57.2957795, MotionStatus::ANGLE_ROLL * 57.2957795, MotionStatus::FB_ACCEL, MotionStatus::RL_ACCEL, accelz, gyroValRL, gyroValFB );
+
+		}
 
         int sum = 0, avr = 512;
         for(int idx = 0; idx < ACCEL_WINDOW_SIZE; idx++)
@@ -309,9 +315,17 @@ void MotionManager::Process()
         avr = sum / ACCEL_WINDOW_SIZE;
 
         if(avr < MotionStatus::FALLEN_F_LIMIT)
+        {
             MotionStatus::FALLEN = FORWARD;
+//DEBUG: 
+printf( "I've fallen forward\r\n" );
+        }
         else if(avr > MotionStatus::FALLEN_B_LIMIT)
+        {
             MotionStatus::FALLEN = BACKWARD;
+//DEBUG: 
+printf( "I've fallen backward\r\n" );
+        }
         else
             MotionStatus::FALLEN = STANDUP;
 
@@ -434,7 +448,7 @@ void MotionManager::SetJointDisable(int index)
 
 void MotionManager::adaptTorqueToVoltage()
 {
-    const int DEST_TORQUE = 1023;
+    const int DEST_TORQUE = 768;
 	// 13V - at 13V darwin will make no adaptation as the standard 3 cell battery is always below this voltage, this implies Nimbro-OP runs on 4 cells
     const int FULL_TORQUE_VOLTAGE = 130; 
     int voltage;
@@ -445,6 +459,8 @@ void MotionManager::adaptTorqueToVoltage()
     voltage = (voltage > FULL_TORQUE_VOLTAGE) ? voltage : FULL_TORQUE_VOLTAGE;
     m_voltageAdaptionFactor = ((double)FULL_TORQUE_VOLTAGE) / voltage;
     int torque = m_voltageAdaptionFactor * DEST_TORQUE;
+
+printf("adaptTorqueToVoltage: vdc %3d, torque%4d\r\n", voltage, torque);
 
 #if LOG_VOLTAGES
     fprintf(m_voltageLog, "%3d       %4d\n", voltage, torque);

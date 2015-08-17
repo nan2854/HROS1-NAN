@@ -37,7 +37,7 @@ minIni* StatusCheck::m_ini1;
 
 void StatusCheck::Check(CM730 &cm730)
 {
-	int value=0;
+	//int value=0;
 
 //////////////////////////////////////////////////////////////////////////////////////
 // System Standby Toggle
@@ -56,6 +56,14 @@ void StatusCheck::Check(CM730 &cm730)
 	if(robotInStandby == 1) return;
 
 
+//TODO: Testing auto stop when fallen
+if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
+{
+	Walking::GetInstance()->Stop();
+	printf( "I think I've fallen over!\r\n");
+	while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
+	LinuxActionScript::m_stop = 1;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////
 // IMU AUTO GETUP ROUTINE
@@ -139,7 +147,7 @@ void StatusCheck::Check(CM730 &cm730)
 			while(PS3.key.Triangle != 0) usleep(8000);			
 			}
 
-
+/*
 //////////////////////////////////////////////////////////////////////////////////////
 // Action Script Button Assignment
 //////////////////////////////////////////////////////////////////////////////////////	
@@ -299,7 +307,7 @@ void StatusCheck::Check(CM730 &cm730)
 		}		
 
 
-
+*/
 
 //////////////////////////////////////////////////////////////////////////////////////
 // PS3 R/C Control code
@@ -308,7 +316,8 @@ void StatusCheck::Check(CM730 &cm730)
 
 		if(Walking::GetInstance()->IsRunning() == true)
 			{
-			int rx,ry,dead_band=6;			
+			int rx,ry;
+			int dead_band=25;			
 			double FBStep=0,RLTurn=0,RLStep=0,xd,yd;
 			static double speedAdjSum=0;			
 
@@ -353,7 +362,7 @@ void StatusCheck::Check(CM730 &cm730)
 			Walking::GetInstance()->speedAdj = speedAdjSum;
 			Walking::GetInstance()->X_OFFSET = Walking::GetInstance()->X_OFFSET_START - speedAdjSum;
 			
-			double hip_offset = Walking::GetInstance()->HIP_PITCH_OFFSET;
+			//double hip_offset = Walking::GetInstance()->HIP_PITCH_OFFSET;
 //			fprintf(stderr, " (hip offset:%.1f)\n", hip_offset);
 			Walking::GetInstance()->X_MOVE_AMPLITUDE = FBStep;
 			Walking::GetInstance()->Y_MOVE_AMPLITUDE = RLStep;
