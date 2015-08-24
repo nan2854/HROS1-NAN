@@ -3,24 +3,10 @@
 
 #define DEBUG
 
-char tempMessage[4096];
+//TODO: Unsafe pch handling with atoi etc.. improve.
+//TODO: Not sending page time or acceleration values. Enhance.
 
-void SetTorque(CM730 *cm730, int ServoID, int on)
-{
-	//DEBUG: printf( "Setting Torque %d for servo %d\r\n", on, ServoID );
-	
-	if ( cm730->WriteByte(ServoID, MX28::P_TORQUE_ENABLE, on, 0) != CM730::SUCCESS  )
-	{
-		printf( "Warning: SetTorque[%d] did not return success for servo: %d\r\n", on, ServoID );
-	}
-#ifdef DEBUG
-	int value;
-	if(cm730->ReadWord(ServoID, MX28::P_PRESENT_POSITION_L, &value, 0) != CM730::SUCCESS)
-	{
-		printf( "Warning: SetTorque[%d] did not return success for reading servo: %d\r\n", on, ServoID );
-	}
-#endif	
-}
+char tempMessage[4096];
 
 void PopulateStepCurrent( CM730 *cm730, Action::STEP *CurrentStep )
 {
@@ -67,29 +53,19 @@ void PopulateStepCurrent( CM730 *cm730, Action::STEP *CurrentStep )
 	}
 }
 
-void GetCurrentPose( CM730 *cm730, char* response )
+void SetTorque(CM730 *cm730, int ServoID, int on)
 {
-	Action::STEP CurrentStep;
-	PopulateStepCurrent( cm730,&CurrentStep );
-			
-	sprintf( response, "CURRENTPOSE:" );	
-	for( int id = JointData::ID_MIN; id <= JointData::ID_MAX; id++ )
+	if ( cm730->WriteByte(ServoID, MX28::P_TORQUE_ENABLE, on, 0) != CM730::SUCCESS  )
 	{
-		if( CurrentStep.position[ id ] & Action::INVALID_BIT_MASK )
-		{
-			sprintf( response + strlen( response ), "%d:X,", id );
-		}
-		else if( CurrentStep.position[ id ] & Action::TORQUE_OFF_BIT_MASK )
-		{
-			unsigned int pos = CurrentStep.position[ id ];
-			pos &= ~Action::TORQUE_OFF_BIT_MASK;
-			sprintf( response + strlen( response ), "%d:%d,", id, -pos );
-		}
-		else 
-		{
-			sprintf( response + strlen( response ), "%d:%d,", id, CurrentStep.position[ id ] );
-		}
+		printf( "Warning: SetTorque[%d] did not return success for servo: %d\r\n", on, ServoID );
 	}
+#ifdef DEBUG
+	int value;
+	if(cm730->ReadWord(ServoID, MX28::P_PRESENT_POSITION_L, &value, 0) != CM730::SUCCESS)
+	{
+		printf( "Warning: SetTorque[%d] did not return success for reading servo: %d\r\n", on, ServoID );
+	}
+#endif	
 }
 
 void TorqueAllServos(CM730 *cm730, char * input)
@@ -105,7 +81,7 @@ void TorqueAllServos(CM730 *cm730, char * input)
 	}
 	else 
 	{
-		printf( "TorqueAllServos could not process the value: %s\r\n", input );
+		printf( "Error: TorqueAllServos could not process the value: %s\r\n", input );
 		return;
 	}
 	
@@ -116,27 +92,6 @@ void TorqueAllServos(CM730 *cm730, char * input)
 	for( int i = JointData::ID_MIN; i <= JointData::ID_MAX; ++i )
 	{
 		SetTorque( cm730, i, on );
-	}
-	
-	GetCurrentPose( cm730, tempMessage );
-	UDPBindSend( tempMessage, strlen( tempMessage ) );	
-}
-
-void Listcommands( char * message)
-{
-	Action::PAGE page;
-
-	sprintf(message,"LIST:");
-	for( int k=0; k<Action::MAXNUM_PAGE; ++k)
-	{
-		if( Action::GetInstance()->LoadPage( k, &page) == true )
-		{
-			if( strlen( (char*)page.header.name ) > 0 )
-			{
-				char* tok = strtok((char*)page.header.name,"\r\n");
-				sprintf(message+strlen(message),"%d:%s,",k,tok);
-			}
-		}
 	}
 }
 
@@ -169,51 +124,6 @@ void ListPose( int pose, char* response )
 		}
 		sprintf(response+strlen(response),"P:%d,T:%d,",poseStep->pause,poseStep->time);
 	}	
-}
-
-void SetServo( CM730 *cm730, char* input )
-{
-	//SETSERVO:1:774
-	input+=9;
-	
-	char * pch;
-	pch = strtok( input, ",:" );
-	
-	while( pch != 0 )
-	{		
-		int index = atoi( pch );		
-		pch = strtok( 0, ",:" );
-		int value = atoi( pch );
-		pch = strtok( 0, ",:" );
-		
-		int error;
-		if ( cm730->WriteWord(index, MX28::P_GOAL_POSITION_L, value, &error) != CM730::SUCCESS )
-		{
-			printf( "Warning: SetServo did not return success for servo %d, error was %d\r\n", index, error );
-		}
-	}
-}
-
-void SetServoSpeeds( CM730 *cm730, char* input )
-{
-	//SETSPEED:0-1023
-	input+=9;
-	
-	char * pch;
-	pch = strtok( input, ",:" );
-	
-	if ( pch != 0 )
-	{		
-		int speed = atoi( pch );
-		if ( speed < 0 ) speed = 0;
-		if ( speed > 1023 ) speed = 1023;
-		
-		int error;
-		if ( cm730->WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, speed, &error) != CM730::SUCCESS )
-		{
-			printf( "Warning: SetServoSpeeds did not return success with value %d error was %d\r\n", speed, error );
-		}
-	}
 }
 
 void GotoPose( CM730 *cm730, char* input )
@@ -279,6 +189,172 @@ void GotoPose( CM730 *cm730, char* input )
 
 }
 
+void GetCurrentPose( CM730 *cm730, char* response )
+{
+	Action::STEP CurrentStep;
+	PopulateStepCurrent( cm730,&CurrentStep );
+			
+	sprintf( response, "CURRENTPOSE:" );	
+	for( int id = JointData::ID_MIN; id <= JointData::ID_MAX; id++ )
+	{
+		if( CurrentStep.position[ id ] & Action::INVALID_BIT_MASK )
+		{
+			sprintf( response + strlen( response ), "%d:X,", id );
+		}
+		else if( CurrentStep.position[ id ] & Action::TORQUE_OFF_BIT_MASK )
+		{
+			unsigned int pos = CurrentStep.position[ id ];
+			pos &= ~Action::TORQUE_OFF_BIT_MASK;
+			sprintf( response + strlen( response ), "%d:%d,", id, -pos );
+		}
+		else 
+		{
+			sprintf( response + strlen( response ), "%d:%d,", id, CurrentStep.position[ id ] );
+		}
+	}
+}
+
+void SetServo( CM730 *cm730, char* input )
+{
+	//SETSERVO:1:774
+	input+=9;
+	
+	char * pch;
+	pch = strtok( input, ",:" );
+	
+	while( pch != 0 )
+	{		
+		int index = atoi( pch );		
+		pch = strtok( 0, ",:" );
+		int value = atoi( pch );
+		pch = strtok( 0, ",:" );
+		
+		int error;
+		if ( cm730->WriteWord(index, MX28::P_GOAL_POSITION_L, value, &error) != CM730::SUCCESS )
+		{
+			printf( "Warning: SetServo did not return success for servo %d, error was %d\r\n", index, error );
+		}
+	}
+}
+
+void SetServoSpeeds( CM730 *cm730, char* input )
+{
+	//SETSPEED:0-1023
+	input+=9;
+	
+	char * pch;
+	pch = strtok( input, ",:" );
+	
+	if ( pch != 0 )
+	{		
+		int speed = atoi( pch );
+		if ( speed < 0 ) speed = 0;
+		if ( speed > 1023 ) speed = 1023;
+		
+		int error;
+		if ( cm730->WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, speed, &error) != CM730::SUCCESS )
+		{
+			printf( "Warning: SetServoSpeeds did not return success with value %d error was %d\r\n", speed, error );
+		}
+	}
+}
+
+void ListPages( char * message )
+{
+	Action::PAGE page;
+
+	sprintf(message,"LIST:");
+	for( int k=0; k<Action::MAXNUM_PAGE; ++k)
+	{
+		if( Action::GetInstance()->LoadPage( k, &page) == true )
+		{
+			if( strlen( (char*)page.header.name ) > 0 )
+			{
+				char* tok = strtok((char*)page.header.name,"\r\n");
+				sprintf(message+strlen(message),"%d:%s,",k,tok);
+			}
+		}
+	}
+}
+
+bool StorePage( char* input )
+{
+	//STOREPAGE:#:TITLE|1:774,2:543,3:456,4:611,5:352,6:417,7:515,8:519,9:516,10:530,11:266,12:760,13:34,14:989,15:746,16:281,17:515,18:528,19:641,20:520,P:0,T:120,|
+
+	int pageNumber = -1;
+	char pageName[14] = {0};
+	
+	Action::PAGE tPage;
+	Action::GetInstance()->ResetPage(&tPage);
+	
+	char * pch;
+	pch = strtok( input, ",:" );
+	
+	//Get page number
+	pageNumber = atoi( pch );
+	pch = strtok( 0, ",:|" );
+	
+	//Get page name
+	strcpy( pageName, pch );
+	pch = strtok( 0, ",:" );
+	
+	int i = 0;
+	for(; i <=7 && pch != 0; ++i )
+	{
+		if( pch[ 0 ] == '|' )
+		{
+			pch++;
+		}
+		if(pch[0]==0)break;
+		
+		while( pch != 0 && pch[ 0 ] != '|')
+		{
+			if( pch[ 0 ] == 'P' )
+			{
+				pch = strtok( 0, ",:" );				
+				tPage.step[ i ].pause = atoi( pch );		
+				pch = strtok( 0, ",:" );						
+			}
+			else if( pch[ 0 ] == 'T' )
+			{
+				pch = strtok( 0, ",:" );		
+				tPage.step[i].time = atoi( pch );;
+				pch = strtok( 0, ",:" );
+			}
+			else
+			{
+				if( pch[ 0 ] > 0x39 || pch[ 0 ] < 0x30 )break;
+				int index = atoi( pch );
+				pch = strtok( 0, ",:" );
+				int value = atoi( pch );
+				pch = strtok( 0, ",:" );
+				tPage.step[ i ].position[ index ] = value;
+			}
+		}
+	}
+	
+	strcpy( (char*)tPage.header.name, pageName );
+	
+	tPage.header.stepnum = i;	
+	tPage.header.repeat = 1;
+	tPage.header.schedule = Action::TIME_BASE_SCHEDULE;
+	tPage.header.speed = 28;
+	tPage.header.accel = 255;
+
+#ifdef DEBUG
+	printf( "netrme: StorePage: name(%s) position(%d) steps(%d)\r\n", (char*)tPage.header.name, pageNumber,  tPage.header.stepnum);
+#endif
+
+	if(Action::GetInstance()->SavePage(pageNumber, &tPage) == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void PlayPage( CM730 *cm730, char* input )
 {
 	//PLAYPOSE:|1:774,2:543,3:456,4:611,5:352,6:417,7:515,8:519,9:516,10:530,11:266,12:760,13:34,14:989,15:746,16:281,17:515,18:528,19:641,20:520,P:0,T:120,|
@@ -303,9 +379,8 @@ void PlayPage( CM730 *cm730, char* input )
 	tPage.step[0].time = 30;
 	
 	int i = 0;
-	for(; i <=20 && pch != 0; ++i )
-	{
-		
+	for(; i <=7 && pch != 0; ++i )
+	{		
 		if( pch[ 0 ] == '|' )
 		{
 			pch++;
@@ -371,31 +446,25 @@ void UDP_Command_Handler( char * p_udpin )
 	printf( "netrme: UDP Command Packet Received: %s\r\n", p_udpin );
 #endif
 
-	if(strcmp(p_udpin,"LIST")==0)
+	if( strcmp( p_udpin, "LIST" ) == 0 )
 	{
-		Listcommands(tempMessage);
-		UDPBindSend(tempMessage, strlen(tempMessage));
-		return;
+		ListPages(tempMessage);
 	}
 	else if( memcmp( p_udpin, "POSE", 4 ) == 0 )
 	{	
 		char* tok = strtok( p_udpin, " " );
 		tok = strtok( 0, " " );
 		int pose = atoi( tok );
-		ListPose(pose, tempMessage);			
-		UDPBindSend(tempMessage, strlen(tempMessage));	
-		return;		
+		ListPose(pose, tempMessage);				
 	}
-	else if(strcmp(p_udpin,"GETPOSE")==0)
+	else if( strcmp( p_udpin, "GETPOSE" ) == 0 )
 	{
 		GetCurrentPose(&cm730,tempMessage);
-		UDPBindSend(tempMessage, strlen(tempMessage));	
-		return;
 	}
 	else if( memcmp( p_udpin, "TORQUEALL:", 10 ) == 0 )
 	{
 		TorqueAllServos( &cm730, p_udpin+10 );
-		return;
+		sprintf( tempMessage, p_udpin );
 	}
 	else if( memcmp( p_udpin, "TORQUE", 6 ) == 0 )
 	{
@@ -406,8 +475,6 @@ void UDP_Command_Handler( char * p_udpin )
 		int onoff = atoi( tok );
 		SetTorque( &cm730, servoid, onoff );
 		GetCurrentPose( &cm730, tempMessage );
-		UDPBindSend( tempMessage, strlen( tempMessage ) );	
-		return;
 	}
 	else if( memcmp( p_udpin, "GOTOPOSE:", 9 ) == 0 )
 	{
@@ -416,10 +483,21 @@ void UDP_Command_Handler( char * p_udpin )
 	}
 	else if( memcmp( p_udpin, "PLAYPAGE:", 9 ) == 0 )
 	{
-		//NOTE: For safety, especially during debugging, make sure motor torque is on before playing!
+//NOTE: For safety, especially during debugging, make sure motor torque is on before playing!
 		TorqueAllServos( &cm730, (char*)"1" );		
 		PlayPage( &cm730, p_udpin );
 		return;
+	}
+	else if( memcmp( p_udpin, "STOREPAGE:", 10 ) == 0 )
+	{
+		if ( StorePage( p_udpin + 10 ) )
+		{
+			sprintf( tempMessage, "STOREPAGE:OK" );
+		}
+		else
+		{
+			sprintf( tempMessage, "STOREPAGE:FAIL" );
+		}
 	}
 	else if( memcmp( p_udpin, "SETSERVO:", 9 ) == 0 )
 	{
@@ -448,8 +526,7 @@ void UDP_Command_Handler( char * p_udpin )
 		return;
 	}
 	
-	UDPBindSend(p_udpin, strlen(p_udpin));
-	
+	UDPBindSend( tempMessage, strlen(tempMessage) );
 }
 
 void UDP_Control_Handler( char * p_udpin )
@@ -467,7 +544,7 @@ void UDP_Control_Handler( char * p_udpin )
 		{
 			printf( "Warning: TODO\r\n");
 		}
-		if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 512, 0) != CM730::SUCCESS )
+		if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 256, 0) != CM730::SUCCESS )
 		{
 			printf( "Warning: TODO\r\n");
 		}
