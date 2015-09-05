@@ -82,8 +82,8 @@ Walking::Walking()
 	m_Joint.SetSlope(JointData::ID_HEAD_PAN, JointData::SLOPE_EXTRASOFT, JointData::SLOPE_EXTRASOFT);
 
 
-	//m_Joint.SetSlope(JointData::ID_R_HIP_ROLL, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
-	//m_Joint.SetSlope(JointData::ID_L_HIP_ROLL, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
+	m_Joint.SetSlope(JointData::ID_R_HIP_ROLL, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
+	m_Joint.SetSlope(JointData::ID_L_HIP_ROLL, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
 	//m_Joint.SetSlope(JointData::ID_R_HIP_PITCH, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
 	//m_Joint.SetSlope(JointData::ID_L_HIP_PITCH, JointData::SLOPE_SOFT, JointData::SLOPE_SOFT);
 	
@@ -610,11 +610,17 @@ void Walking::Process()
             offset += (double)dir[i] * pelvis_offset_r;
         else if(i == 7) // L_HIP_ROLL
             offset += (double)dir[i] * pelvis_offset_l;
+        
         else if(i == 2 || i == 8) // R_HIP_PITCH or L_HIP_PITCH
-            offset -= (double)dir[i] * HIP_PITCH_OFFSET * MX28::RATIO_ANGLE2VALUE;
-		//else if( i == 4 || i == 10) // R_ANKLE_PITCH or L_ANKLE_PITCH
-		//	offset += (double)dir[i] * 2.0 * MX28::RATIO_ANGLE2VALUE;
-					
+            offset -= (double)dir[i] * ( 15.0 + HIP_PITCH_OFFSET ) * MX28::RATIO_ANGLE2VALUE;
+		
+		else if ( i == JointData::ID_R_KNEE || i == JointData::ID_L_KNEE )
+			offset += (double)dir[i] * 20.0 * MX28::RATIO_ANGLE2VALUE;
+			
+		else if( i == 4 || i == 10) // R_ANKLE_PITCH or L_ANKLE_PITCH
+			offset += (double)dir[i] * 5.0 * MX28::RATIO_ANGLE2VALUE;
+		
+				
 		outValue[i] = MX28::Angle2Value(initAngle[i]) + (int)offset;
     }
 

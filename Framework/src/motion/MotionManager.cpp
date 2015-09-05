@@ -303,9 +303,9 @@ void MotionManager::Process()
            MotionStatus::ANGLE_ROLL  = -m_angleEstimator.roll();
 
 
-//DEBUG:
-int accelz = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_Z_L);
-printf( "Pitch: %0.2f Roll: %0.2f ax: %d ay: %d az: %d gyroRoll: %d gyroPitch %d\r\n", MotionStatus::ANGLE_PITCH * 57.2957795, MotionStatus::ANGLE_ROLL * 57.2957795, MotionStatus::FB_ACCEL, MotionStatus::RL_ACCEL, accelz, gyroValRL, gyroValFB );
+//TODO: DEBUG:
+//int accelz = m_CM730->m_BulkReadData[CM730::ID_CM].ReadWord(CM730::P_ACCEL_Z_L);
+//printf( "Pitch: %0.2f Roll: %0.2f ax: %d ay: %d az: %d gyroRoll: %d gyroPitch %d\r\n", MotionStatus::ANGLE_PITCH * 57.2957795, MotionStatus::ANGLE_ROLL * 57.2957795, MotionStatus::FB_ACCEL, MotionStatus::RL_ACCEL, accelz, gyroValRL, gyroValFB );
 
 		}
 
@@ -318,13 +318,13 @@ printf( "Pitch: %0.2f Roll: %0.2f ax: %d ay: %d az: %d gyroRoll: %d gyroPitch %d
         {
             MotionStatus::FALLEN = FORWARD;
 //DEBUG: 
-printf( "I've fallen forward\r\n" );
+//printf( "I've fallen forward\r\n" );
         }
         else if(avr > MotionStatus::FALLEN_B_LIMIT)
         {
             MotionStatus::FALLEN = BACKWARD;
 //DEBUG: 
-printf( "I've fallen backward\r\n" );
+//printf( "I've fallen backward\r\n" );
         }
         else
             MotionStatus::FALLEN = STANDUP;
@@ -448,7 +448,7 @@ void MotionManager::SetJointDisable(int index)
 
 void MotionManager::adaptTorqueToVoltage()
 {
-    const int DEST_TORQUE = 768;
+    const int DEST_TORQUE = 1023;
 	// 13V - at 13V darwin will make no adaptation as the standard 3 cell battery is always below this voltage, this implies Nimbro-OP runs on 4 cells
     const int FULL_TORQUE_VOLTAGE = 130; 
     int voltage;
@@ -460,7 +460,7 @@ void MotionManager::adaptTorqueToVoltage()
     m_voltageAdaptionFactor = ((double)FULL_TORQUE_VOLTAGE) / voltage;
     int torque = m_voltageAdaptionFactor * DEST_TORQUE;
 
-printf("adaptTorqueToVoltage: vdc %3d, torque%4d\r\n", voltage, torque);
+//printf("adaptTorqueToVoltage: vdc %3d, torque%4d\r\n", voltage, torque);
 
 #if LOG_VOLTAGES
     fprintf(m_voltageLog, "%3d       %4d\n", voltage, torque);
