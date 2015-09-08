@@ -27,6 +27,8 @@
         var val = text.split(": ");
         //document.getElementById('hints').firstChild.nodeValue = text;
         document.getElementById(val[0]).firstChild.nodeValue = val[1];
+        
+        if ( getAllValueIndex != -1 ) getAllValues();
       }
 
       function KeyDown(ev) {
@@ -68,15 +70,48 @@
       }
       
       function loadvalue() {
-        AJAX_get('/?action=command&command=value_reload')
+        AJAX_get('/?action=command&command=value_reload');
       }
 
       document.onkeydown = KeyDown;
 
+		var getAllValueIndex = 0;
+		var commands = ['walk_x_offset&value=0'
+			,'walk_y_offset&value=0'
+			,'walk_z_offset&value=0'
+			,'walk_roll_offset&value=0'
+			,'walk_pitch_offset&value=0'
+			,'walk_pitch_offset&value=0'
+			,'walk_yaw_offset&value=0'
+			,'walk_hip_offset&value=0'
+			,'walk_period_time&value=0'
+			,'walk_dsp_ratio&value=0'
+			,'walk_step_fb_ratio&value=0'
+			,'walk_step_fb&value=0'
+			,'walk_step_rl&value=0'
+			,'walk_step_dir&value=0'
+			,'walk_foot_height&value=0'
+			,'walk_swing_rl&value=0'
+			,'walk_swing_td&value=0'
+			,'walk_pelvis_offset&value=0'
+			,'walk_arm_swing_gain&value=0'
+			,'walk_b_knee_gain&value=0'
+			,'walk_b_ankle_pitch_gain&value=0'
+			,'walk_b_hip_roll_gain&value=0'
+			,'walk_b_ankle_roll_gain&value=0'
+			,'walk_p_gain&value=0'
+			,'walk_i_gain&value=0'
+			,'walk_d_gain&value=0'
+			];
+		function getAllValues()
+		{
+			send_command( commands[ getAllValueIndex++ ] );
+			if ( getAllValueIndex > sizeof( commands ) ) getAllValueIndex = -1;
+		}
     </script>
 
 </head>
-<body onload="loadvalue();">
+<body onload="getAllValues();">
 
 <table width="830px">
 
