@@ -659,7 +659,7 @@ void Walking::Process()
 
 	for(int id = JointData::ID_R_HIP_YAW; id <= JointData::ID_L_ANKLE_ROLL; id++)
 	{
-		/* Testing alternate slopes.. not a great idea...
+		// Testing alternate slopes.. not a great idea...
 		if ( id == JointData::ID_R_HIP_ROLL || id == JointData::ID_L_HIP_ROLL )
 		{
 			m_Joint.SetSlope(id, JointData::SLOPE_DEFAULT, JointData::SLOPE_DEFAULT);
@@ -670,9 +670,8 @@ void Walking::Process()
 		}
 		else
 		{
-		*/
 			m_Joint.SetSlope(id, JointData::SLOPE_HARD, JointData::SLOPE_HARD);
-		//}
+		}
 	}
 
 

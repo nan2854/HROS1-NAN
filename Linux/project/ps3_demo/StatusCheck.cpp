@@ -68,8 +68,8 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 //////////////////////////////////////////////////////////////////////////////////////
 // IMU AUTO GETUP ROUTINE
 //////////////////////////////////////////////////////////////////////////////////////		
-/*
-	 if(MotionStatus::FALLEN != STANDUP && (m_cur_mode == SOCCER) && m_is_started == 1)
+
+	 if(MotionStatus::FALLEN != STANDUP && /*(m_cur_mode == SOCCER) &&*/ m_is_started == 1)
    	{
      Walking::GetInstance()->Stop();
 	 	resetLEDs(cm730);
@@ -80,14 +80,16 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 
 
     if(MotionStatus::FALLEN == FORWARD)
-        Action::GetInstance()->Start(1);   // FORWARD GETUP 10
+        Action::GetInstance()->Start(10);   // FORWARD GETUP 10
     else if(MotionStatus::FALLEN == BACKWARD)
-        Action::GetInstance()->Start(1);   // BACKWARD GETUP 11
+        Action::GetInstance()->Start(11);   // BACKWARD GETUP 11
 
+	while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
+	
     Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
     Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
 		}
-*/
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -338,7 +340,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 				RLTurn = 50*xd;	
 				FBStep = 45*yd;
 //				fprintf(stderr, " (yd:%.1f)\n", yd);
-				Walking::GetInstance()->HIP_PITCH_OFFSET = Walking::GetInstance()->HIP_PITCH_OFFSET_START + yd/2;
+				//Walking::GetInstance()->HIP_PITCH_OFFSET = Walking::GetInstance()->HIP_PITCH_OFFSET_START + yd/2;
 				if(FBStep < 0)
 				{
 					FBStep = 20*yd;

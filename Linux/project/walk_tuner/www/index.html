@@ -106,7 +106,7 @@
 		function getAllValues()
 		{
 			send_command( commands[ getAllValueIndex++ ] );
-			if ( getAllValueIndex > sizeof( commands ) ) getAllValueIndex = -1;
+			if ( getAllValueIndex > sizeof( commands ) - 1 ) getAllValueIndex = -1;
 		}
     </script>
 
