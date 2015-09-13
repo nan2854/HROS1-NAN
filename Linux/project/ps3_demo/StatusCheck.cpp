@@ -59,7 +59,12 @@ void StatusCheck::Check(CM730 &cm730)
 //TODO: Testing auto stop when fallen
 if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 {
+	int i = JointData::ID_R_SHOULDER_PITCH;
 	Walking::GetInstance()->Stop();
+	for ( ; i < JointData::ID_L_ELBOW; ++i )
+	{
+		Walking::GetInstance()->m_Joint.SetEnable( i, false );
+	}
 	printf( "I think I've fallen over!\r\n");
 	while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
 	LinuxActionScript::m_stop = 1;

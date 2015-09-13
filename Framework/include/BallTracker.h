@@ -40,6 +40,7 @@ namespace Robot
         void SaveINISettings(minIni* ini, const std::string &section);
 
 		void Process(Image* camImg);
+		void Process(Point2D pos);
 	};
 }
 
