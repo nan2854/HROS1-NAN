@@ -105,7 +105,7 @@ int main(void)
 
     while(isRunning)
     {
-        usleep(10000);
+        //usleep(10000);
         Point2D pos;
         LinuxCamera::GetInstance()->CaptureFrame();	
 

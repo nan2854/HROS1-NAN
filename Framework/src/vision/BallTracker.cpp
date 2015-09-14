@@ -127,6 +127,7 @@ void BallTracker::Process(Point2D pos)
 		//offset.X=fitRange(offset.X,12);
 		//offset.Y=fitRange(offset.Y,12);
 
+		//printf( "Ball X: %0.2f Ball Y: %0.2f\r\n", offset.X, offset.Y);
 
 		ball_position = offset;
 		Head::GetInstance()->MoveTracking(ball_position);
