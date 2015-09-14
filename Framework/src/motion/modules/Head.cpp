@@ -18,18 +18,18 @@ Head* Head::m_UniqueInstance = new Head();
 
 Head::Head()
 {
-	m_Pan_p_gain = 0.1;
+	m_Pan_p_gain = 0.15;
 	m_Pan_d_gain = 0.22;
 
-    m_Tilt_p_gain = 0.1;
+    m_Tilt_p_gain = 0.15;
 	m_Tilt_d_gain = 0.22;
 
 	m_LeftLimit = 70;
 	m_RightLimit = -70;
-	m_TopLimit = Kinematics::EYE_TILT_OFFSET_ANGLE;
+	m_TopLimit = Kinematics::EYE_TILT_OFFSET_ANGLE + 20;
 	m_BottomLimit = Kinematics::EYE_TILT_OFFSET_ANGLE - 65;
 
-	m_Pan_Home = 30;
+	m_Pan_Home = 0;
 	m_Tilt_Home = Kinematics::EYE_TILT_OFFSET_ANGLE - 30.0;
 
 	m_TopLimit_line_following = Kinematics::EYE_TILT_OFFSET_ANGLE - 25;

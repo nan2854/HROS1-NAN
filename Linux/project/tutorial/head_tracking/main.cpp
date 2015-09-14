@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <libgen.h>
+#include <signal.h>
 
 #include "Camera.h"
 #include "mjpg_streamer.h"
@@ -27,8 +28,17 @@
 #define U2D_DEV_NAME0       "/dev/ttyUSB0"
 #define U2D_DEV_NAME1       "/dev/ttyUSB1"
 
+int isRunning = 1;
 LinuxCM730 linux_cm730(U2D_DEV_NAME0);
 CM730 cm730(&linux_cm730);
+
+// Define the exit signal handler
+void signal_callback_handler(int signum)
+{
+    //LinuxCamera::~LinuxCamera();
+    printf("Exiting program; Caught signal %d\r\n",signum);
+    isRunning = 0;
+}
 
 void change_current_dir()
 {
@@ -39,6 +49,9 @@ void change_current_dir()
 
 int main(void)
 {
+    //Register signal and signal handler
+    signal(SIGINT, signal_callback_handler);
+
     printf( "\n===== Head tracking Tutorial for DARwIn =====\n\n");
 
     change_current_dir();
@@ -90,8 +103,9 @@ int main(void)
 	//Head::GetInstance()->m_Joint.SetPGain(JointData::ID_HEAD_PAN, 8);
 	//Head::GetInstance()->m_Joint.SetPGain(JointData::ID_HEAD_TILT, 8);
 
-    while(1)
+    while(isRunning)
     {
+        usleep(10000);
         Point2D pos;
         LinuxCamera::GetInstance()->CaptureFrame();	
 

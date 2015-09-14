@@ -37,6 +37,7 @@ LinuxCamera::LinuxCamera() :
 
 LinuxCamera::~LinuxCamera()
 {
+printf( "LinuxCamera::Destructor Hit\r\n" );
     /* streaming off */
     enum v4l2_buf_type type;
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
