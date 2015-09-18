@@ -154,7 +154,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 			while(PS3.key.Triangle != 0) usleep(8000);			
 			}
 
-/*
+
 //////////////////////////////////////////////////////////////////////////////////////
 // Action Script Button Assignment
 //////////////////////////////////////////////////////////////////////////////////////	
@@ -164,21 +164,27 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 //////////////////////////////////////////////////////////////////////////////////////			
 		if(PS3.key.Select != 0) 
 		{
-		if(LinuxActionScript::m_is_running == 0)
+			if ( m_cur_mode == READY ) m_cur_mode = SOCCER;
+			else if ( m_cur_mode == SOCCER ) m_cur_mode = READY;
+			printf("Robot changing mode to  %s\n",m_cur_mode==Robot::READY?"Ready":m_cur_mode==Robot::SOCCER?"Soccer":"None");
+			/*
+			if(LinuxActionScript::m_is_running == 0)
 			{
-			m_cur_mode = SOCCER;
-		      LinuxActionScript::m_stop = 0;
-		      Head::GetInstance()->m_Joint.SetEnableBody(false);
-		      Walking::GetInstance()->m_Joint.SetEnableBody(false);
-		      Action::GetInstance()->m_Joint.SetEnableBody(true);		
-                	LinuxActionScript::ScriptStart(SCRIPT_FILE_PATH_SELECT);
-		      while(Action::GetInstance()->IsRunning() == true) usleep(8000);		
+				m_cur_mode = SOCCER;
+				LinuxActionScript::m_stop = 0;
+				Head::GetInstance()->m_Joint.SetEnableBody(false);
+				Walking::GetInstance()->m_Joint.SetEnableBody(false);
+				Action::GetInstance()->m_Joint.SetEnableBody(true);		
+				LinuxActionScript::ScriptStart(SCRIPT_FILE_PATH_SELECT);
+
+				while(Action::GetInstance()->IsRunning() == true) usleep(8000);		
 			}
-		while(PS3.key.Select != 0) usleep(8000);
+			*/
+			while(PS3.key.Select != 0) usleep(8000);
 		}
 
 
-
+/*
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Square

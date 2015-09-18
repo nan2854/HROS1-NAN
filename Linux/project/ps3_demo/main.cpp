@@ -55,6 +55,22 @@ int main(int argc, char *argv[])
 		StatusCheck::m_ini = ini;
 		StatusCheck::m_ini1 = ini1;
 
+/* RL - Soccer Demo! */
+	//Image* rgb_ball = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
+	Image* rgb_output = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
+
+    LinuxCamera::GetInstance()->Initialize(0);
+    LinuxCamera::GetInstance()->LoadINISettings(ini);
+
+    mjpg_streamer* streamer = new mjpg_streamer(Camera::WIDTH, Camera::HEIGHT);
+
+    ColorFinder* ball_finder = new ColorFinder();
+    ball_finder->LoadINISettings(ini);
+    httpd::ball_finder = ball_finder;
+
+    BallTracker tracker = BallTracker();
+    BallFollower follower = BallFollower();
+
     //////////////////// Framework Initialize ////////////////////////////
     if(MotionManager::GetInstance()->Initialize(&cm730) == false)
     {
@@ -209,13 +225,84 @@ if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM
 		
 		
     while(1)
-			{
-			usleep( 10000 );
-      StatusCheck::Check(cm730);
+	{
+		Point2D ball_pos, red_pos, yellow_pos, blue_pos;
 
-		if(StatusCheck::m_is_started == 0)
-        continue;
-			}
+        LinuxCamera::GetInstance()->CaptureFrame();
+        memcpy(rgb_output->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageSize);
+
+		usleep( 10000 );
+
+		StatusCheck::Check(cm730);
+
+		if(StatusCheck::m_cur_mode == SOCCER)
+        {
+            tracker.Process(ball_finder->GetPosition(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame));
+
+            for(int i = 0; i < rgb_output->m_NumberOfPixels; i++)
+            {
+                if(ball_finder->m_result->m_ImageData[i] == 1)
+                {
+                    rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 0] = 255;
+                    rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 1] = 128;
+                    rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 2] = 0;
+                }
+            }
+        }
+
+        streamer->send_image(rgb_output);
+
+		if(StatusCheck::m_is_started == 0) continue;
+
+		switch(StatusCheck::m_cur_mode)
+        {
+        case READY:
+            break;
+        case SOCCER:
+            if(Action::GetInstance()->IsRunning() == 0)
+            {
+                Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                follower.Process(tracker.ball_position);
+
+                if(follower.KickBall != 0)
+                {
+                    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                    Action::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                    if(follower.KickBall == -1)
+                    {
+                        Action::GetInstance()->Start(12);   // RIGHT KICK
+                        //fprintf(stderr, "RightKick! \n");
+                        printf( "Right Kick!\r\n" );
+                    }
+                    else if(follower.KickBall == 1)
+                    {
+                        Action::GetInstance()->Start(13);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                        printf( "Left Kick!\r\n" );
+                    }
+                }
+            }
+            break;
+        case MOTION:
+            //if(LinuxActionScript::m_is_running == 0)
+            //    LinuxActionScript::ScriptStart(SCRIPT_FILE_PATH);
+            break;
+        case VISION:
+        	/*
+            int detected_color = 0;
+            detected_color |= (red_pos.X == -1)? 0 : VisionMode::RED;
+            detected_color |= (yellow_pos.X == -1)? 0 : VisionMode::YELLOW;
+            detected_color |= (blue_pos.X == -1)? 0 : VisionMode::BLUE;
+
+            if(Action::GetInstance()->IsRunning() == 0)
+                VisionMode::Play(detected_color);
+               */
+            break;
+        }
+	}
 
     return 0;
 }
