@@ -12,6 +12,7 @@
 #include "MotionManager.h"
 #include <unistd.h>
 #include <assert.h>
+#include <stdlib.h>
 
 using namespace Robot;
 
@@ -456,6 +457,15 @@ void MotionManager::adaptTorqueToVoltage()
     if(m_CM730->ReadByte(CM730::ID_CM, CM730::P_VOLTAGE, &voltage, 0) != CM730::SUCCESS)
         return;
 
+    //Check if voltage has dropped too low; if so kill the servos and issue a poweroff command
+    if ( voltage < 108 )
+    {
+        printf( "MotionManager::adaptTorqueToVoltage: Voltage dropped below safe threshold. Shutting down." );
+        m_CM730->WriteByte(CM730::ID_BROADCAST, MX28::P_TORQUE_ENABLE, 0, 0); //kill torque
+        m_CM730->DXLPowerOn(false); //power off bus
+        system( "poweroff" );
+        while(1);
+    }
     voltage = (voltage > FULL_TORQUE_VOLTAGE) ? voltage : FULL_TORQUE_VOLTAGE;
     m_voltageAdaptionFactor = ((double)FULL_TORQUE_VOLTAGE) / voltage;
     int torque = m_voltageAdaptionFactor * DEST_TORQUE;

@@ -74,7 +74,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 // IMU AUTO GETUP ROUTINE
 //////////////////////////////////////////////////////////////////////////////////////		
 
-	 if(MotionStatus::FALLEN != STANDUP && /*(m_cur_mode == SOCCER) &&*/ m_is_started == 1)
+	 if(MotionStatus::FALLEN != STANDUP && (m_cur_mode == SOCCER) && m_is_started == 1)
    	{
      Walking::GetInstance()->Stop();
 	 	resetLEDs(cm730);
@@ -123,36 +123,38 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 // Start Walk Ready
 //////////////////////////////////////////////////////////////////////////////////////
 		if(PS3.key.Triangle != 0)
-			{
+		{
 			if(m_is_started == 0)
-				{
+			{
 				cm730.DXLPowerOn(true);
-				}
+			}
 			resetLEDs(cm730);
-		  Walking::GetInstance()->Stop();
+			Walking::GetInstance()->Stop();
 			while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
+			
 			int lastMode = m_cur_mode;
 			m_cur_mode = SOCCER;      
-	MotionManager::GetInstance()->Reinitialize();
-    MotionManager::GetInstance()->SetEnable(true);
-    m_is_started = 1;
-    bLJState = bRJState = false;
-    Head::GetInstance()->m_Joint.SetEnableBody(false);
-    Walking::GetInstance()->m_Joint.SetEnableBody(false);
-    Action::GetInstance()->m_Joint.SetEnableBody(true);
+			MotionManager::GetInstance()->Reinitialize();
+			MotionManager::GetInstance()->SetEnable(true);
+			m_is_started = 1;
+			bLJState = bRJState = false;
+			
+			Head::GetInstance()->m_Joint.SetEnableBody(false);
+			Walking::GetInstance()->m_Joint.SetEnableBody(false);
+			Action::GetInstance()->m_Joint.SetEnableBody(true);
 
-      if(lastMode == SITTING)
+			if(lastMode == SITTING)
 				Action::GetInstance()->Start(8); //50
 			else
 				Action::GetInstance()->Start(9); //9
-      while(Action::GetInstance()->IsRunning() == true) usleep(8000);
+			while(Action::GetInstance()->IsRunning() == true) usleep(8000);
 
-      Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true);
-      Action::GetInstance()->m_Joint.SetEnableBody(false);
+			Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true);
+			Action::GetInstance()->m_Joint.SetEnableBody(false);
 			usleep(5000);
-      Head::GetInstance()->m_Joint.SetEnableHeadOnly(true);
+			Head::GetInstance()->m_Joint.SetEnableHeadOnly(true);
 			while(PS3.key.Triangle != 0) usleep(8000);			
-			}
+		}
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -165,8 +167,15 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 		if(PS3.key.Select != 0) 
 		{
 			if ( m_cur_mode == READY ) m_cur_mode = SOCCER;
-			else if ( m_cur_mode == SOCCER ) m_cur_mode = READY;
-			printf("Robot changing mode to  %s\n",m_cur_mode==Robot::READY?"Ready":m_cur_mode==Robot::SOCCER?"Soccer":"None");
+			else 
+			{
+				Walking::GetInstance()->Stop();
+	 			resetLEDs(cm730);
+	 			while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
+				m_cur_mode = READY;
+			}
+
+			printf("Robot changing mode to %s\r\n",m_cur_mode==Robot::READY?"Ready":m_cur_mode==Robot::SOCCER?"Soccer":"Unknown?!?");
 			/*
 			if(LinuxActionScript::m_is_running == 0)
 			{

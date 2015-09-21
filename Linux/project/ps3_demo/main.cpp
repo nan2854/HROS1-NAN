@@ -29,6 +29,15 @@
 #define U2D_DEV_NAME0       "/dev/ttyUSB0"
 #define U2D_DEV_NAME1       "/dev/ttyUSB1"
 
+int isRunning = 1;
+// Define the exit signal handler
+void signal_callback_handler(int signum)
+{
+    //LinuxCamera::~LinuxCamera();
+    printf("Exiting program; Caught signal %d\r\n",signum);
+    isRunning = 0;
+}
+
 LinuxCM730 linux_cm730(U2D_DEV_NAME0);
 CM730 cm730(&linux_cm730);
 int GetCurrentPosition(CM730 &cm730);
@@ -65,6 +74,7 @@ int main(int argc, char *argv[])
     mjpg_streamer* streamer = new mjpg_streamer(Camera::WIDTH, Camera::HEIGHT);
 
     ColorFinder* ball_finder = new ColorFinder();
+    //ColorFinder* ball_finder = new ColorFinder(0, 15, 45, 0, 0.3, 50.0);
     ball_finder->LoadINISettings(ini);
     httpd::ball_finder = ball_finder;
 
@@ -224,11 +234,9 @@ if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM
 }
 		
 		
-    while(1)
+    while(isRunning)
 	{
-		Point2D ball_pos, red_pos, yellow_pos, blue_pos;
-
-        LinuxCamera::GetInstance()->CaptureFrame();
+		LinuxCamera::GetInstance()->CaptureFrame();
         memcpy(rgb_output->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageSize);
 
 		usleep( 10000 );
@@ -244,7 +252,7 @@ if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM
                 if(ball_finder->m_result->m_ImageData[i] == 1)
                 {
                     rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 0] = 255;
-                    rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 1] = 128;
+                    rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 1] = 0;
                     rgb_output->m_ImageData[i*rgb_output->m_PixelSize + 2] = 0;
                 }
             }
