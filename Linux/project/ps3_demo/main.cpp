@@ -56,15 +56,16 @@ int change_current_dir()
 
 int main(int argc, char *argv[])
 {
-		//int trackerSel;    
-		change_current_dir();
+	//int trackerSel;    
+	change_current_dir();
 
-    minIni* ini = new minIni(INI_FILE_PATH); 
-		minIni* ini1 = new minIni(M_INI); 
-		StatusCheck::m_ini = ini;
-		StatusCheck::m_ini1 = ini1;
+	minIni* ini = new minIni(INI_FILE_PATH); 
+	minIni* ini1 = new minIni(M_INI); 
+	StatusCheck::m_ini = ini;
+	StatusCheck::m_ini1 = ini1;
 
 /* RL - Soccer Demo! */
+
 	//Image* rgb_ball = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
 	Image* rgb_output = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
 
@@ -102,18 +103,17 @@ int main(int argc, char *argv[])
     //MotionManager::GetInstance()->StartThread();
     //LinuxMotionTimer::Initialize(MotionManager::GetInstance());
     LinuxMotionTimer linuxMotionTimer;
-		linuxMotionTimer.Initialize(MotionManager::GetInstance());
-		linuxMotionTimer.Start();
-   /////////////////////////////////////////////////////////////////////
-//	MotionManager::GetInstance()->LoadINISettings(ini);
+	linuxMotionTimer.Initialize(MotionManager::GetInstance());
+	linuxMotionTimer.Start();
+    //MotionManager::GetInstance()->LoadINISettings(ini);
 
     int firm_ver = 0,retry=0;
     //important but allow a few retries
-		while(cm730.ReadByte(JointData::ID_HEAD_PAN, MX28::P_VERSION, &firm_ver, 0)  != CM730::SUCCESS)
+	while(cm730.ReadByte(JointData::ID_HEAD_PAN, MX28::P_VERSION, &firm_ver, 0)  != CM730::SUCCESS)
     {
         fprintf(stderr, "Can't read firmware version from Dynamixel ID %d!! \n\n", JointData::ID_HEAD_PAN);
         retry++;
-				if(retry >=3) exit(1);// if we can't do it after 3 attempts its not going to work.
+		if(retry >=3) exit(1);// if we can't do it after 3 attempts its not going to work.
     }
 
     if(0 < firm_ver && firm_ver < 27)
@@ -123,123 +123,52 @@ int main(int argc, char *argv[])
     else
         exit(0);
 
-		//conversion! ////////////////
-		/*
-		Action::GetInstance()->LoadFile("../../../Data/motion.bin");
-		int j,k,p,a;
-		double f;		
-		for(k=0;k<Action::MAXNUM_PAGE;k++)
-			{
-			Action::GetInstance()->LoadPage(k, &Page);
-			for(j=0;j<Action::MAXNUM_STEP;j++)
-				{
-				for(p=0;p<31;p++)
-					{
-					a = Page.step[j].position[p];
-					if(a < 1024)
-						{
-						f = ((a-512)*10)/3+2048;						
-						a = (int)f;						
-						if(a<0) a =0;
-						if(a>4095) a = 4095;						
-						Page.step[j].position[p] = a;						
-						}						
-					}				
-				}
-			Action::GetInstance()->SavePage(k, &Page);
-			}
-		exit(0);
-		*/
-		//copy page ////////////////
-		if(argc>1 && strcmp(argv[1],"-copy")==0)
-			{
-			printf("Page copy -- uses files motion_src.bin and motion_dest.bin\n");
-			if(Action::GetInstance()->LoadFile((char *)"../../../Data/motion_src.bin") == false)
-				{
-				printf("Unable to open source file\n");
-				exit(1);
-				}
-			int k;
-			void *page1;
-
-			page1 = malloc(sizeof(Robot::Action::PAGE));
-			printf("Page to load:");
-			if(scanf("%d",&k) != EOF)
-				{
-				if(Action::GetInstance()->LoadPage(k, (Robot::Action::PAGE *)page1) == false)
-					{
-					printf("Unable to load page %d\n",k);
-					exit(1);
-					}
-				if(Action::GetInstance()->LoadFile((char *)"../../../Data/motion_dest.bin") == false)
-					{
-					printf("Unable to open destination file\n");
-					exit(1);
-					}
-				if(Action::GetInstance()->SavePage(k, (Robot::Action::PAGE *)page1) == false)
-					{
-					printf("Unable to save page %d\n",k);
-					exit(1);
-					}
-				printf("Completed successfully.\n");
-				exit(0);
-				}
-			}
-		/////////////////////////////
-/*
-    Walking::GetInstance()->m_Joint.SetEnableBody(true,true);
-    MotionManager::GetInstance()->SetEnable(true);
-
-		Walking::GetInstance()->LoadINISettings(m_ini);                  
-
-    cm730.WriteByte(CM730::P_LED_PANNEL, 0x01|0x02|0x04, NULL);
-
-    PS3Controller_Start();
-		LinuxActionScript::PlayMP3("../../../Data/mp3/ready.mp3");
-    Action::GetInstance()->Start(15);
-    while(Action::GetInstance()->IsRunning()) usleep(8*1000);
-*/
-		Walking::GetInstance()->LoadINISettings(ini);   
-MotionManager::GetInstance()->LoadINISettings(ini); 
+	Walking::GetInstance()->LoadINISettings(ini);   
+	MotionManager::GetInstance()->LoadINISettings(ini); 
 
     Walking::GetInstance()->m_Joint.SetEnableBody(false);
     Head::GetInstance()->m_Joint.SetEnableBody(false);
     Action::GetInstance()->m_Joint.SetEnableBody(true);
     MotionManager::GetInstance()->SetEnable(true);
               
-
     cm730.WriteByte(CM730::P_LED_PANNEL, 0x02, NULL);
 
     if(PS3Controller_Start() == 0)
 			printf("PS3 controller not installed.\n");
-		cm730.WriteWord(CM730::P_LED_HEAD_L, cm730.MakeColor(1,1,1),0);
-		//determine current position
-		StatusCheck::m_cur_mode = GetCurrentPosition(cm730);
-		//LinuxActionScript::PlayMP3("../../../Data/mp3/ready.mp3");
-		if((argc>1 && strcmp(argv[1],"-off")==0) || (StatusCheck::m_cur_mode == SITTING))
-			{
-			cm730.DXLPowerOn(false);
-			//for(int id=JointData::ID_R_SHOULDER_PITCH; id<JointData::NUMBER_OF_JOINTS; id++)
-			//	cm730.WriteByte(id, MX28::P_TORQUE_ENABLE, 0, 0);
-			}
-		else
-			{
-			Action::GetInstance()->Start(15);
-			while(Action::GetInstance()->IsRunning()) usleep(8*1000);
-			}
-			
-if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM730::SUCCESS )
-{
-	printf( "Warning: TODO\r\n");
-}
-		
-		
-    while(isRunning)
+	cm730.WriteWord(CM730::P_LED_HEAD_L, cm730.MakeColor(1,1,1),0);
+	
+	//determine current position
+	StatusCheck::m_cur_mode = GetCurrentPosition(cm730);
+	
+	//LinuxActionScript::PlayMP3("../../../Data/mp3/ready.mp3");
+	
+	if((argc>1 && strcmp(argv[1],"-off")==0) || (StatusCheck::m_cur_mode == SITTING))
 	{
+		cm730.DXLPowerOn(false);
+		//for(int id=JointData::ID_R_SHOULDER_PITCH; id<JointData::NUMBER_OF_JOINTS; id++)
+		//	cm730.WriteByte(id, MX28::P_TORQUE_ENABLE, 0, 0);
+	}
+	else
+	{
+		Action::GetInstance()->Start(15);
+		while(Action::GetInstance()->IsRunning()) usleep(8*1000);
+	}
+			
+	if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM730::SUCCESS )
+	{
+		printf( "Warning: TODO\r\n");
+	}
+	usleep( 100000 );
+	cm730.WriteByte(85, 0, 0, 0); //red off
+	cm730.WriteByte(85, 1, 0, 0); //green off
+	cm730.WriteByte(85, 2, 0, 0); //blue off
+
+    while(isRunning)
+	{  
 		LinuxCamera::GetInstance()->CaptureFrame();
         memcpy(rgb_output->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageSize);
 
-		usleep( 10000 );
+		//usleep( 10000 );
 
 		StatusCheck::Check(cm730);
 
@@ -281,15 +210,26 @@ if ( cm730.WriteWord(CM730::ID_BROADCAST, MX28::P_MOVING_SPEED_L, 1023, 0) != CM
 
                     if(follower.KickBall == -1)
                     {
+                    	cm730.WriteByte(85, 0, 0, 0); //red off
+                    	cm730.WriteByte(85, 1, 0, 0); //green off
+                    	cm730.WriteByte(85, 2, 200, 0); //blue on
                         Action::GetInstance()->Start(12);   // RIGHT KICK
                         //fprintf(stderr, "RightKick! \n");
                         printf( "Right Kick!\r\n" );
                     }
                     else if(follower.KickBall == 1)
                     {
+                    	cm730.WriteByte(85, 0, 0, 0); //red off
+                    	cm730.WriteByte(85, 2, 0, 0); //blue off
+                    	cm730.WriteByte(85, 1, 200, 0); //green on
                         Action::GetInstance()->Start(13);   // LEFT KICK
                         //fprintf(stderr, "LeftKick! \n");
                         printf( "Left Kick!\r\n" );
+                    }
+                    else
+                    {
+                    	cm730.WriteByte(85, 2, 0, 0); //blue off
+                    	cm730.WriteByte(85, 1, 0, 0); //green off
                     }
                 }
             }
