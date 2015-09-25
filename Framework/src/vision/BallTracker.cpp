@@ -75,7 +75,10 @@ void BallTracker::Process(Image* camImg)
 			NoBallCount++;
 		}
 		else
-			Head::GetInstance()->LookAround(); //Head::GetInstance()->InitTracking();
+		{
+			Head::GetInstance()->InitTracking();
+			Head::GetInstance()->LookAround();
+		}
 	}
 	else
 	{
@@ -110,8 +113,8 @@ void BallTracker::Process(Point2D pos)
 		}
 		else
 		{
+			Head::GetInstance()->InitTracking();
 			Head::GetInstance()->LookAround();
-			//Head::GetInstance()->InitTracking();
 			//Head::GetInstance()->MoveToHome();
 		}
 	}

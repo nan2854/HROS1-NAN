@@ -18,10 +18,10 @@ Head* Head::m_UniqueInstance = new Head();
 
 Head::Head()
 {
-	m_Pan_p_gain = 0.13;
+	m_Pan_p_gain = 0.1;
 	m_Pan_d_gain = 0.18;
 
-    m_Tilt_p_gain = 0.13;
+    m_Tilt_p_gain = 0.1;
 	m_Tilt_d_gain = 0.18;
 
 	m_LeftLimit = 70;
