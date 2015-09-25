@@ -63,7 +63,7 @@ void BallFollower::Process(Point2D ball_pos)
 			// can not find a ball
 			m_GoalFBStep = 0;
 			m_GoalRLTurn = 0;
-			Head::GetInstance()->MoveToHome();
+			//Head::GetInstance()->MoveToHome();
 
 			if(DEBUG_PRINT == true)
 				fprintf(stderr, "[NO BALL]");
