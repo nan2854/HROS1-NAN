@@ -75,7 +75,7 @@ void BallTracker::Process(Image* camImg)
 			NoBallCount++;
 		}
 		else
-			Head::GetInstance()->InitTracking();
+			Head::GetInstance()->LookAround(); //Head::GetInstance()->InitTracking();
 	}
 	else
 	{
@@ -110,8 +110,9 @@ void BallTracker::Process(Point2D pos)
 		}
 		else
 		{
-			Head::GetInstance()->InitTracking();
-			Head::GetInstance()->MoveToHome();
+			Head::GetInstance()->LookAround();
+			//Head::GetInstance()->InitTracking();
+			//Head::GetInstance()->MoveToHome();
 		}
 	}
 	else
@@ -123,11 +124,6 @@ void BallTracker::Process(Point2D pos)
 
 		offset.X *= (Camera::VIEW_H_ANGLE / (double)Camera::WIDTH); // pixel per angle
 		offset.Y *= (Camera::VIEW_V_ANGLE / (double)Camera::HEIGHT); // pixel per angle
-		
-		//offset.X=fitRange(offset.X,12);
-		//offset.Y=fitRange(offset.Y,12);
-
-		//printf( "Ball X: %0.2f Ball Y: %0.2f\r\n", offset.X, offset.Y);
 
 		ball_position = offset;
 		Head::GetInstance()->MoveTracking(ball_position);

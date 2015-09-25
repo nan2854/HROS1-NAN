@@ -18,11 +18,11 @@ Head* Head::m_UniqueInstance = new Head();
 
 Head::Head()
 {
-	m_Pan_p_gain = 0.15;
-	m_Pan_d_gain = 0.22;
+	m_Pan_p_gain = 0.13;
+	m_Pan_d_gain = 0.18;
 
-    m_Tilt_p_gain = 0.15;
-	m_Tilt_d_gain = 0.22;
+    m_Tilt_p_gain = 0.13;
+	m_Tilt_d_gain = 0.18;
 
 	m_LeftLimit = 70;
 	m_RightLimit = -70;
@@ -35,6 +35,11 @@ Head::Head()
 	m_TopLimit_line_following = Kinematics::EYE_TILT_OFFSET_ANGLE - 25;
 	m_TopLimit_robot_following = Kinematics::EYE_TILT_OFFSET_ANGLE - 15;
 	m_TopLimit_soccer = Kinematics::EYE_TILT_OFFSET_ANGLE;
+
+	m_LookPanRate = 1.2;
+	m_LookTiltRate = 0.8;
+	m_LookPanDirection = m_LookPanRate;
+	m_LookTiltDirection = m_LookTiltRate;
 
 	m_Joint.SetEnableHeadOnly(true);
 }
@@ -184,4 +189,31 @@ void Head::Process()
 
 	if(m_Joint.GetEnable(JointData::ID_HEAD_TILT) == true)
 		m_Joint.SetAngle(JointData::ID_HEAD_TILT, m_TiltAngle);
+}
+
+void Head::LookAround()
+{
+    double pan,tilt;
+    pan = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_PAN);
+    tilt = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_TILT);
+
+    if ( tilt > ( m_TopLimit - m_LookTiltRate ) )
+    {
+        m_LookTiltDirection = -m_LookTiltRate;
+    }
+    else if ( tilt < ( m_BottomLimit + m_LookTiltRate ) )
+    {
+        m_LookTiltDirection = m_LookTiltRate;
+    }
+
+    if ( pan < ( m_RightLimit + m_LookPanRate ) )
+    {
+        m_LookPanDirection = m_LookPanRate;
+    }
+    else if ( pan > ( m_LeftLimit - m_LookPanRate ) )
+    {
+        m_LookPanDirection = -m_LookPanRate;
+    }
+
+    MoveByAngleOffset( m_LookPanDirection, m_LookTiltDirection );
 }
