@@ -15,16 +15,7 @@
 #include "mjpg_streamer.h"
 #include "LinuxDARwIn.h"
 
-#ifdef MX28_1024
-#define MOTION_FILE_PATH    ((char *)"../../../Data/motion_1024.bin")
-#else
-#define MOTION_FILE_PATH    ((char *)"../../../Data/motion_4096.bin")
-#endif
 #define INI_FILE_PATH       ((char *)"../../../Data/config.ini")
-
-#define M_INI   ((char *)"../../../Data/slow-walk.ini")
-#define SCRIPT_FILE_PATH    "script.asc"
-
 #define U2D_DEV_NAME0       "/dev/ttyUSB0"
 #define U2D_DEV_NAME1       "/dev/ttyUSB1"
 
@@ -35,8 +26,10 @@ CM730 cm730(&linux_cm730);
 // Define the exit signal handler
 void signal_callback_handler(int signum)
 {
-    //LinuxCamera::~LinuxCamera();
     printf("Exiting program; Caught signal %d\r\n",signum);
+    
+    cm730.DXLPowerOn(false); //NOTE: Turning off Dynamixel bus because it's convenient for me (quite cooling fans)
+    
     isRunning = 0;
 }
 
