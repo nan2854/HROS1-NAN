@@ -1,13 +1,13 @@
 ###############################################################
 #
-# Purpose: Makefile for "head_tracking"
+# Purpose: Makefile for "rgb_color_sensor"
 # Author.: robotis
 # Version: 0.1
 # License: GPL
 #
 ###############################################################
 
-TARGET = head_tracking
+TARGET = rgb_color_sensor
 
 INCLUDE_DIRS = -I../../../include -I../../../../Framework/include
 
@@ -38,4 +38,4 @@ $(TARGET): darwin.a $(OBJECTS)
 # useful to make a backup "make tgz"
 tgz: clean
 	mkdir -p backups
-	tar czvf ./backups/head_tracking_`date +"%Y_%m_%d_%H.%M.%S"`.tgz --exclude backups *
+	tar czvf ./backups/rgb_color_sensor_`date +"%Y_%m_%d_%H.%M.%S"`.tgz --exclude backups *

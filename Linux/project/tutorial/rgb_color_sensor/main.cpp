@@ -52,19 +52,19 @@ int main(void)
     //Register signal and signal handler
     signal(SIGINT, signal_callback_handler);
 
-    printf( "\n===== Head tracking Tutorial for DARwIn =====\n\n");
+    printf( "\n===== RGB Color Sensing for HR-OS1 =====\n\n");
 
     change_current_dir();
 
     minIni* ini = new minIni(INI_FILE_PATH);
-    Image* rgb_ball = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
+    Image* rgb_frame = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
 
     LinuxCamera::GetInstance()->Initialize(0);
     LinuxCamera::GetInstance()->LoadINISettings(ini);
 
     mjpg_streamer* streamer = new mjpg_streamer(Camera::WIDTH, Camera::HEIGHT);
 
-//////////////////// Framework Initialize ////////////////////////////
+    //////////////////// Framework Initialize ////////////////////////////
     if(MotionManager::GetInstance()->Initialize(&cm730) == false)
     {
         linux_cm730.SetPortName(U2D_DEV_NAME1);
@@ -75,84 +75,72 @@ int main(void)
         }
     }
 
-    Walking::GetInstance()->LoadINISettings(ini);
-    usleep(100);
     MotionManager::GetInstance()->LoadINISettings(ini);
 
+    MotionManager::GetInstance()->SetEnable(false);
     MotionManager::GetInstance()->AddModule((MotionModule*)Action::GetInstance());
     MotionManager::GetInstance()->AddModule((MotionModule*)Head::GetInstance());
-    MotionManager::GetInstance()->AddModule((MotionModule*)Walking::GetInstance());
-    //MotionManager::GetInstance()->StartThread();
-    //LinuxMotionTimer::Initialize(MotionManager::GetInstance());
     LinuxMotionTimer linuxMotionTimer;
-        linuxMotionTimer.Initialize(MotionManager::GetInstance());
-        linuxMotionTimer.Start();
+    linuxMotionTimer.Initialize(MotionManager::GetInstance());
+    linuxMotionTimer.Stop();
 
-	MotionStatus::m_CurrentJoints.SetEnableBodyWithoutHead(false);
-	MotionManager::GetInstance()->SetEnable(true);
-	/////////////////////////////////////////////////////////////////////
+    //Specify color sensing area for sampling
+    int bounds_height = 48; //20%
+    int bounds_width = 64; //20%
 
-	Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
-
+    int bounds_y_min = ( Camera::HEIGHT / 2 ) - ( bounds_height / 2 );
+    int bounds_y_max = ( Camera::HEIGHT / 2 ) + ( bounds_height / 2 );
+    int bounds_x_min = ( Camera::WIDTH / 2 ) - ( bounds_width / 2 );
+    int bounds_x_max = ( Camera::WIDTH / 2 ) + ( bounds_width / 2 );
 
     while(isRunning)
     {
-        //usleep(10000);
-        Point2D pos;
         LinuxCamera::GetInstance()->CaptureFrame();	
+        rgb_frame = LinuxCamera::GetInstance()->fbuffer->m_RGBFrame;
+        
+        int red_avg = 0;
+        int green_avg = 0;
+        int blue_avg = 0;
+        int sample_cnt = 1;
+        int threshold = 42;
 
-				rgb_ball = LinuxCamera::GetInstance()->fbuffer->m_RGBFrame;
-				float red_avg = 0;
-				float green_avg = 0;
-			  float blue_avg = 0;
-				int bright_cnt = 1;
-				int threshold = 128;
-				
-				int bounds_height = 48;
-				int bounds_width = 64;
-				
-				static int bounds_y_min = (Camera::HEIGHT / 2) - (bounds_height / 2 );
-				static int bounds_y_max = (Camera::HEIGHT / 2) + ( bounds_height / 2 );
-				static int bounds_x_min = (Camera::WIDTH / 2)-(bounds_width / 2);
-				static int bounds_x_max = (Camera::WIDTH / 2)+(bounds_width / 2);
-        for(int i = 0; i < rgb_ball->m_NumberOfPixels; i++)
+        for(int i = 0; i < rgb_frame->m_NumberOfPixels; i++)
         {
-        	  int y_pos = i / 320;
-        	  int x_pos = i % 320;
-        	  
-        	  if ( y_pos > bounds_y_min && y_pos < bounds_y_max && x_pos > bounds_x_min && x_pos < bounds_x_max )
-            /*
-            if ( rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] > threshold
-            	|| rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] > threshold
-            	|| rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] > threshold )
-            */
+            int y_pos = i / 320;
+            int x_pos = i % 320;
+
+            //Determine if current pixel is within our color sensing bounds
+            if ( y_pos > bounds_y_min && y_pos < bounds_y_max && x_pos > bounds_x_min && x_pos < bounds_x_max )
+            
+            //Optional threshold value can be used
+            if ( rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 0] > threshold
+            	|| rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 1] > threshold
+            	|| rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 2] > threshold )
+            
             {
-            	red_avg += rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0];
-            	green_avg += rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1];
-            	blue_avg += rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2];
-            	++bright_cnt;
+            	red_avg += rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 0];
+            	green_avg += rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 1];
+            	blue_avg += rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 2];
+            	++sample_cnt;
             	
-            	rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 255;
-            	rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 255;
-            	rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 255;
+            	rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 0] = 255;
+            	rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 1] = 255;
+            	rgb_frame->m_ImageData[i*rgb_frame->m_PixelSize + 2] = 255;
             	
             }            
         }
         
-        red_avg /= bright_cnt;
-        green_avg /= bright_cnt;
-        blue_avg /= bright_cnt;
+        red_avg /= sample_cnt;
+        green_avg /= sample_cnt;
+        blue_avg /= sample_cnt;
         
-        cm730.WriteByte(85, 0, (int)red_avg, 0); //red
-        //usleep(10000);
-        cm730.WriteByte(85, 1, (int)green_avg, 0); //green
-        //usleep(10000);
-        cm730.WriteByte(85, 2, (int)blue_avg, 0); //blue
+        cm730.WriteByte(85, 0, red_avg, 0); //red
+        cm730.WriteByte(85, 1, green_avg, 0); //green
+        cm730.WriteByte(85, 2, blue_avg, 0); //blue
         
+        printf("Sensing R%d G%d B%d\n",red_avg,green_avg,blue_avg);
         
-        //printf("%4.0f %4.0f %4.0f\n",red_avg,green_avg,blue_avg);
-        
-        streamer->send_image(rgb_ball);
+        streamer->send_image(rgb_frame);
     }
 
     return 0;
