@@ -32,5 +32,6 @@
 #include "PS3BallFollower.h"
 #include "LineFollower.h"
 #include "RobotFollower.h"
+#include "RGBHands.h"
 
 #endif

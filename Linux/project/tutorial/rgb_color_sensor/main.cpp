@@ -57,6 +57,8 @@ int main(void)
 
     mjpg_streamer* streamer = new mjpg_streamer(Camera::WIDTH, Camera::HEIGHT);
 
+    RGBHands hand_ctrl( &cm730 );
+
     //////////////////// Framework Initialize ////////////////////////////
     if(MotionManager::GetInstance()->Initialize(&cm730) == false)
     {
@@ -127,10 +129,8 @@ int main(void)
         green_avg /= sample_cnt;
         blue_avg /= sample_cnt;
         
-        cm730.WriteByte(85, 0, red_avg, 0); //red
-        cm730.WriteByte(85, 1, green_avg, 0); //green
-        cm730.WriteByte(85, 2, blue_avg, 0); //blue
-        
+        hand_ctrl.SetRGB( red_avg, green_avg, blue_avg );
+
         printf("Sensing R%d G%d B%d\n",red_avg,green_avg,blue_avg);
         
         streamer->send_image(rgb_frame);
