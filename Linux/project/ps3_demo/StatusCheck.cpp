@@ -78,9 +78,9 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 	{
 		Walking::GetInstance()->Stop();
 
-		cm730.WriteByte(85, 2, 0, 0); //blue off
-        cm730.WriteByte(85, 1, 0, 0); //green off
-		cm730.WriteByte(85, 0, 200, 0); //red on
+		cm730.WriteByte(222, 2, 0, 0); //blue off
+        cm730.WriteByte(222, 1, 0, 0); //green off
+		cm730.WriteByte(222, 0, 200, 0); //red on
 
 		resetLEDs(cm730);
 		while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
@@ -99,7 +99,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 
 		while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
 
-		cm730.WriteByte(85, 0, 0, 0); //red off
+		cm730.WriteByte(222, 0, 0, 0); //red off
 
 		Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
 		Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
@@ -416,7 +416,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 
 	if(Walking::GetInstance()->IsRunning() == true && PS3.key.Down != 0)
 		{
-		fprintf(stderr, "STOPPING WALKING GAIT\n");		
+		fprintf(stderr, "STOPPING WALKING GAIT\n");	
 		resetLEDs(cm730);
 		Walking::GetInstance()->Stop();
 		while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
@@ -430,7 +430,7 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 //////////////////////////////////////////////////////////////////////////////////////
 if(Walking::GetInstance()->IsRunning() == false && PS3.key.Up != 0)
 	{
-	if(m_cur_mode == SOCCER)
+	if(m_is_started == 1 && m_cur_mode != SOCCER )
 		{
 		fprintf(stderr, "STARTING WALKING GAIT\n");		
 		Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);

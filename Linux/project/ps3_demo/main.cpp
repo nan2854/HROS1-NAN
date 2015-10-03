@@ -55,8 +55,7 @@ int change_current_dir()
 }
 
 int main(int argc, char *argv[])
-{
-	//int trackerSel;    
+{   
 	change_current_dir();
 
 	minIni* ini = new minIni(INI_FILE_PATH); 
@@ -64,9 +63,11 @@ int main(int argc, char *argv[])
 	StatusCheck::m_ini = ini;
 	StatusCheck::m_ini1 = ini1;
 
+/* RL - RGB Hands. For more info see: TODO */
+    RGBHands hand_ctrl( &cm730 );
+
 /* RL - Soccer Demo! */
 
-	//Image* rgb_ball = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
 	Image* rgb_output = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
 
     LinuxCamera::GetInstance()->Initialize(0);
@@ -75,7 +76,6 @@ int main(int argc, char *argv[])
     mjpg_streamer* streamer = new mjpg_streamer(Camera::WIDTH, Camera::HEIGHT);
 
     ColorFinder* ball_finder = new ColorFinder();
-    //ColorFinder* ball_finder = new ColorFinder(0, 15, 45, 0, 0.3, 50.0);
     ball_finder->LoadINISettings(ini);
     httpd::ball_finder = ball_finder;
 
@@ -100,12 +100,10 @@ int main(int argc, char *argv[])
     MotionManager::GetInstance()->AddModule((MotionModule*)Action::GetInstance());
     MotionManager::GetInstance()->AddModule((MotionModule*)Head::GetInstance());
     MotionManager::GetInstance()->AddModule((MotionModule*)Walking::GetInstance());
-    //MotionManager::GetInstance()->StartThread();
-    //LinuxMotionTimer::Initialize(MotionManager::GetInstance());
+
     LinuxMotionTimer linuxMotionTimer;
 	linuxMotionTimer.Initialize(MotionManager::GetInstance());
 	linuxMotionTimer.Start();
-    //MotionManager::GetInstance()->LoadINISettings(ini);
 
     int firm_ver = 0,retry=0;
     //important but allow a few retries
@@ -158,10 +156,15 @@ int main(int argc, char *argv[])
 	{
 		printf( "Warning: TODO\r\n");
 	}
-	usleep( 100000 );
-	cm730.WriteByte(85, 0, 0, 0); //red off
-	cm730.WriteByte(85, 1, 0, 0); //green off
-	cm730.WriteByte(85, 2, 0, 0); //blue off
+
+	//Flash Hands Red, Green, Blue, then turn off.
+	hand_ctrl.SetFlash( 128, 0, 0, 5, 15, 255 ); 
+    usleep( 200000 );
+    hand_ctrl.SetFlash( 0, 128, 0, 5, 15, 255 ); 
+    usleep( 200000 );
+    hand_ctrl.SetFlash( 0, 0, 128, 5, 15, 255 ); 
+    usleep( 200000 );
+	hand_ctrl.SetRGB( 0, 0, 0 );
 
     while(isRunning)
 	{  
@@ -176,6 +179,11 @@ int main(int argc, char *argv[])
         {
             tracker.Process(ball_finder->GetPosition(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame));
 
+            if ( tracker.isTracking() == false )
+            {
+                hand_ctrl.SetRGB( 0, 0, 0 ); //Hands off while searching for a ball to track
+            }
+
             for(int i = 0; i < rgb_output->m_NumberOfPixels; i++)
             {
                 if(ball_finder->m_result->m_ImageData[i] == 1)
@@ -189,12 +197,17 @@ int main(int argc, char *argv[])
 
         streamer->send_image(rgb_output);
 
-		if(StatusCheck::m_is_started == 0) continue;
+		if(StatusCheck::m_is_started == 0) 
+        {
+            hand_ctrl.SetRGB( 64, 64, 64 ); //Light white hands when sitting
+            continue;
+        }
 
 		switch(StatusCheck::m_cur_mode)
         {
         case READY:
-            break;
+            hand_ctrl.SetRGB( 0, 128, 0 ); 
+        break;
         case SOCCER:
             if(Action::GetInstance()->IsRunning() == 0)
             {
@@ -210,45 +223,21 @@ int main(int argc, char *argv[])
 
                     if(follower.KickBall == -1)
                     {
-                    	cm730.WriteByte(85, 0, 0, 0); //red off
-                    	cm730.WriteByte(85, 1, 0, 0); //green off
-                    	cm730.WriteByte(85, 2, 200, 0); //blue on
+                        hand_ctrl.SetFlash( 0, 0, 200, 10, 20, 20 ); //Flash hands blue for a right kick
                         Action::GetInstance()->Start(12);   // RIGHT KICK
                         //fprintf(stderr, "RightKick! \n");
                         printf( "Right Kick!\r\n" );
                     }
                     else if(follower.KickBall == 1)
                     {
-                    	cm730.WriteByte(85, 0, 0, 0); //red off
-                    	cm730.WriteByte(85, 2, 0, 0); //blue off
-                    	cm730.WriteByte(85, 1, 200, 0); //green on
+                    	hand_ctrl.SetFlash( 0, 200, 0, 10, 20, 20 ); //Flash hands green for a left kick
                         Action::GetInstance()->Start(13);   // LEFT KICK
                         //fprintf(stderr, "LeftKick! \n");
                         printf( "Left Kick!\r\n" );
                     }
-                    else
-                    {
-                    	cm730.WriteByte(85, 2, 0, 0); //blue off
-                    	cm730.WriteByte(85, 1, 0, 0); //green off
-                    }
                 }
             }
-            break;
-        case MOTION:
-            //if(LinuxActionScript::m_is_running == 0)
-            //    LinuxActionScript::ScriptStart(SCRIPT_FILE_PATH);
-            break;
-        case VISION:
-        	/*
-            int detected_color = 0;
-            detected_color |= (red_pos.X == -1)? 0 : VisionMode::RED;
-            detected_color |= (yellow_pos.X == -1)? 0 : VisionMode::YELLOW;
-            detected_color |= (blue_pos.X == -1)? 0 : VisionMode::BLUE;
-
-            if(Action::GetInstance()->IsRunning() == 0)
-                VisionMode::Play(detected_color);
-               */
-            break;
+        break;
         }
 	}
 
