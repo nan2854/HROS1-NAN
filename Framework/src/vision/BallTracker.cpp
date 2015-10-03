@@ -78,10 +78,12 @@ void BallTracker::Process(Image* camImg)
 		{
 			Head::GetInstance()->InitTracking();
 			Head::GetInstance()->LookAround();
+			m_trackingBall = 0;
 		}
 	}
 	else
 	{
+		m_trackingBall = 1;
 		NoBallCount = 0;
 		Point2D center = Point2D(camImg->m_Width/2, camImg->m_Height/2);
 		Point2D offset = pos - center;
@@ -113,6 +115,7 @@ void BallTracker::Process(Point2D pos)
 		}
 		else
 		{
+			m_trackingBall = 0;
 			Head::GetInstance()->InitTracking();
 			Head::GetInstance()->LookAround();
 			//Head::GetInstance()->MoveToHome();
@@ -120,6 +123,7 @@ void BallTracker::Process(Point2D pos)
 	}
 	else
 	{
+		m_trackingBall = 1;
 		NoBallCount = 0;
 		Point2D center = Point2D((double)Camera::WIDTH/2.0, (double)Camera::HEIGHT/2.0);
 		Point2D offset = pos - center;

@@ -19,6 +19,7 @@ namespace Robot
 	class BallTracker
 	{
 	private:
+		bool m_trackingBall;
 		int NoBallCount;
 		static const int NoBallMaxCount = 15;
 
@@ -41,6 +42,8 @@ namespace Robot
 
 		void Process(Image* camImg);
 		void Process(Point2D pos);
+
+		bool isTracking() { return m_trackingBall; }
 	};
 }
 
