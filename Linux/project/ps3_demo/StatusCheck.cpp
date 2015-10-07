@@ -21,6 +21,7 @@
 #include "LineFollower.h"
 #include "RobotFollower.h"
 #include "LinuxDARwIn.h"
+#include "RGBHands.h"
 
 using namespace Robot;
 
@@ -78,9 +79,12 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 	{
 		Walking::GetInstance()->Stop();
 
-		cm730.WriteByte(222, 2, 0, 0); //blue off
-        cm730.WriteByte(222, 1, 0, 0); //green off
-		cm730.WriteByte(222, 0, 200, 0); //red on
+		cm730.WriteByte(ID_RGB_HAND_R, RGBHands::BLUE, 0, 0); //blue off
+        cm730.WriteByte(ID_RGB_HAND_R, RGBHands::GREEN, 0, 0); //green off
+		cm730.WriteByte(ID_RGB_HAND_R, RGBHands::RED, 200, 0); //red on
+		cm730.WriteByte(ID_RGB_HAND_L, RGBHands::BLUE, 0, 0); //blue off
+        cm730.WriteByte(ID_RGB_HAND_L, RGBHands::GREEN, 0, 0); //green off
+		cm730.WriteByte(ID_RGB_HAND_L, RGBHands::RED, 200, 0); //red on
 
 		resetLEDs(cm730);
 		while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
@@ -99,7 +103,8 @@ if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
 
 		while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
 
-		cm730.WriteByte(222, 0, 0, 0); //red off
+		cm730.WriteByte(ID_RGB_HAND_R, RGBHands::RED, 0, 0); //red off
+		cm730.WriteByte(ID_RGB_HAND_L, RGBHands::RED, 0, 0); //red off
 
 		Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
 		Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);

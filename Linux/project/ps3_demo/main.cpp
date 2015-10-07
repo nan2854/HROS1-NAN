@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <string.h>
 #include <libgen.h>
+#include <signal.h>
 
 #include "mjpg_streamer.h"
 #include "LinuxDARwIn.h"
@@ -29,15 +30,6 @@
 #define U2D_DEV_NAME0       "/dev/ttyUSB0"
 #define U2D_DEV_NAME1       "/dev/ttyUSB1"
 
-int isRunning = 1;
-// Define the exit signal handler
-void signal_callback_handler(int signum)
-{
-    //LinuxCamera::~LinuxCamera();
-    printf("Exiting program; Caught signal %d\r\n",signum);
-    isRunning = 0;
-}
-
 LinuxCM730 linux_cm730(U2D_DEV_NAME0);
 CM730 cm730(&linux_cm730);
 int GetCurrentPosition(CM730 &cm730);
@@ -54,8 +46,22 @@ int change_current_dir()
 		return status;
 }
 
+int isRunning = 1;
+// Define the exit signal handler
+void signal_callback_handler(int signum)
+{
+    //LinuxCamera::~LinuxCamera();
+    printf("Exiting program; Caught signal %d\r\n",signum);
+    cm730.DXLPowerOn(false);
+    sleep(1);
+    isRunning = 0;
+}
+
 int main(int argc, char *argv[])
 {   
+	//Register signal and signal handler
+    signal(SIGINT, signal_callback_handler);
+
 	change_current_dir();
 
 	minIni* ini = new minIni(INI_FILE_PATH); 
@@ -140,11 +146,12 @@ int main(int argc, char *argv[])
 	
 	//LinuxActionScript::PlayMP3("../../../Data/mp3/ready.mp3");
 	
-	if((argc>1 && strcmp(argv[1],"-off")==0) || (StatusCheck::m_cur_mode == SITTING))
+	if((argc>1 && strcmp(argv[1],"-off")==0))
 	{
 		cm730.DXLPowerOn(false);
 		//for(int id=JointData::ID_R_SHOULDER_PITCH; id<JointData::NUMBER_OF_JOINTS; id++)
 		//	cm730.WriteByte(id, MX28::P_TORQUE_ENABLE, 0, 0);
+		return 0;
 	}
 	else
 	{
@@ -156,14 +163,18 @@ int main(int argc, char *argv[])
 	{
 		printf( "Warning: TODO\r\n");
 	}
+	printf( "Starting flash sequence.\r\n" );
+
 
 	//Flash Hands Red, Green, Blue, then turn off.
+	hand_ctrl.SetRGB( 0, 0, 0 );
+	sleep( 1 );
 	hand_ctrl.SetFlash( 128, 0, 0, 5, 15, 255 ); 
-    usleep( 200000 );
+    sleep( 1 );
     hand_ctrl.SetFlash( 0, 128, 0, 5, 15, 255 ); 
-    usleep( 200000 );
+    sleep( 1 );
     hand_ctrl.SetFlash( 0, 0, 128, 5, 15, 255 ); 
-    usleep( 200000 );
+    sleep( 1 );
 	hand_ctrl.SetRGB( 0, 0, 0 );
 
     while(isRunning)
@@ -206,7 +217,7 @@ int main(int argc, char *argv[])
 		switch(StatusCheck::m_cur_mode)
         {
         case READY:
-            hand_ctrl.SetRGB( 0, 128, 0 ); 
+            hand_ctrl.SetRGB( 0, 128, 0 ); //Hands green in ready mode
         break;
         case SOCCER:
             if(Action::GetInstance()->IsRunning() == 0)
