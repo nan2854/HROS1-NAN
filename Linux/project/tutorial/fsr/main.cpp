@@ -14,9 +14,6 @@
 using namespace Robot;
 
 #define INI_FILE_PATH       "../../../../Data/config.ini"
-//#define U2D_DEV_NAME        "/dev/ttyUSB0"
-
-
 #define U2D_DEV_NAME0       "/dev/ttyUSB0"
 #define U2D_DEV_NAME1       "/dev/ttyUSB1"
 LinuxCM730 linux_cm730(U2D_DEV_NAME0);
@@ -63,6 +60,18 @@ void* walk_thread(void* ptr)
         {
             printf( "\r\nEscape key pressed. Exiting\r\n" );
             isRunning = 0;
+        }
+        else if ( ch == 'c' )
+        {
+            printf( "\r\nSetting Calibration\r\n" );
+            cm730.WriteByte(FSR::ID_R_FSR, 24 /*custom calibrate*/, 1 /*set*/, 0);
+            cm730.WriteByte(FSR::ID_L_FSR, 24 /*custom calibrate*/, 1 /*set*/, 0);
+        }
+        else if ( ch == 'r' )
+        {
+            printf( "\r\nResetting Calibration\r\n" );
+            cm730.WriteByte(FSR::ID_R_FSR, 25 /*clear custom calibrate*/, 1 /*set*/, 0);
+            cm730.WriteByte(FSR::ID_L_FSR, 25 /*clear custom calibrate*/, 1 /*set*/, 0);
         }
     }
     return NULL;
